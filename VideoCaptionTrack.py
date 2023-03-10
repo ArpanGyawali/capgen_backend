@@ -2,65 +2,70 @@ from threading import Thread
 
 import cv2
 import numpy as np
-import PIL
 from aiortc import MediaStreamTrack
+import asyncio
 from av import VideoFrame
 
 import predict
+import random
 
-
+captionList = ['sdasd', 'asdasdasdasdas', 'asdasdasdasdasdasds', 'asdasdsadasdasdasdasdadasdsa']
 class VideoCaptionTrack():
     """
     A video stream track that transforms frames from an another track of frames with captions.
     """
 
-    kind = "video"
 
     def __init__(self, track):
-        super().__init__()  # don't forget this!
-        self.track = track
-        self.count = 0
-        self.frames = []
-        self.caption = ""
+        self._track = track
+        self._count = 0
+        self._frames = []
+        self._isNewCap = False
+        self._caption = ""
 
     def mythreadFunc(self, images):
         caption = predict.test(images)
-        self.caption = caption
-
-    async def recv(self):
-        frame = await self.track.recv()
+        self._isNewCap = True
+        self._caption = caption
+    
+    @property
+    def isNewCap(self):
+        return self._isNewCap
+    
+    @property
+    def caption(self):
+        return self._caption
+    
+    @isNewCap.setter
+    def isNewCap(self, value):
+        self._isNewCap = value
+        
+    async def receive(self):
+        frame = await self._track.recv()
 
         # print("caption")
         # return frame
-        self.count += 1
+        self._count += 1
         # print('**********' + str(self.count) + '*********')
         # frame.to_image().save("frame.jpg")
-        PIL.Image.fromarray(frame.to_ndarray(format="rgb24")).save("frame.jpg")
         img = frame.to_ndarray(format="rgb24")
-        print(img)
+        # print(img)
         # cv2.imshow("frame", img)
-        return frame
 
-        if self.count <= 80:
+
+        if self._count <= 80:
             image = cv2.resize(img, (224, 224))
             # frame = cv2.resize(frame, (224, 224, 3))
-            self.frames.append(image)
-        elif self.count == 81:
-            self.count = 0
-            images = np.array(self.frames)
-            self.frames = []
+            self._frames.append(image)
+        elif self._count == 81:
+            self._count = 0
+            images = np.array(self._frames)
+            self._frames = []
+            # await asyncio.sleep(3)
+            # self._isNewCap = True
+            # random_num = random.randint(0, 3)
+            # self._caption = captionList[random_num]
             thread = Thread(target=self.mythreadFunc, args=(images,))
             thread.start()
+        print(self._count)
 
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        if self.caption != None:
-            print("caption")
-            text = "Caption: " + self.caption
-            img = cv2.putText(
-                img, text, (10, 440), font, 1, (255, 255, 0), 2, cv2.LINE_AA
-            )
-
-        new_frame = VideoFrame.from_ndarray(img, format="bgr24")
-        new_frame.pts = frame.pts
-        new_frame.time_base = frame.time_base
-        return new_frame

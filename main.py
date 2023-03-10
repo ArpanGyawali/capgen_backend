@@ -12,8 +12,12 @@ import settings
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
+import tensorflow as tf
 
-# from VideoCaptionTrack import VideoCaptionTrack
+
+from VideoCaptionTrack import VideoCaptionTrack
+
+import tensorflow as tf
 
 ROOT = os.path.dirname(__file__)
 
@@ -22,6 +26,10 @@ pcs = set()
 relay = MediaRelay()
 settings.init()
 
+if tf.test.gpu_device_name():
+    print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
+else:
+    print("Please install GPU version of TF")
 
 async def offer(request):
     print(type(request))
@@ -58,6 +66,7 @@ async def offer(request):
             pcs.discard(pc)
 
     # A  ------------------------->B
+
     @pc.on("track")
     async def on_track(track):
         log_info("Track %s received", track.kind)
@@ -68,38 +77,45 @@ async def offer(request):
         elif track.kind == "video":
             print("track added")
 
-            # processing time
-            await track.recv()
-            print("processing done")
-            channel.send("Caption 1")
+            videoTrack = VideoCaptionTrack(track)
+            while(1):
+                await videoTrack.receive()
+                if videoTrack.isNewCap:
+                    videoTrack.isNewCap = False
+                    channel.send(videoTrack.caption)
+                
+        print("track subscribed")
 
-            await asyncio.sleep(5)
-            channel.send("Caption 2")
+            # print("processing done")
+            # channel.send("Caption 1")
 
-            # loop to continuously receive frames
-            count = 0
-            while True:
-                frame = await track.recv()
-                if frame:
-                    # do something with the frame, e.g. send it to a video sink
-                    # ...
+            # await asyncio.sleep(5)
+            # channel.send("Caption 2")
 
-                    PIL.Image.fromarray(frame.to_ndarray(format="rgb24")).save(
-                        f"frame/frame{count}.jpg"
-                    )
+            # # loop to continuously receive frames
+            # count = 0
+            # while True:
+            #     frame = await track.recv()
+            #     if frame:
+            #         # do something with the frame, e.g. send it to a video sink
+            #         # ...
 
-                    img = frame.to_ndarray(format="rgb24")
-                    print(img)
-                    count += 1
+            #         PIL.Image.fromarray(frame.to_ndarray(format="rgb24")).save(
+            #             f"frame/frame{count}.jpg"
+            #         )
 
-                else:
-                    break
+            #         img = frame.to_ndarray(format="rgb24")
+            #         print(img)
+            #         count += 1
+
+            #     else:
+            #         break
 
             # frame = await relay.subscribe(track).recv()
             # frame = await track.recv()
 
             # pc.addTrack(VideoCaptionTrack(relay.subscribe(track)))
-            print("track subscribed")
+            
 
         @track.on("ended")
         async def on_ended():
