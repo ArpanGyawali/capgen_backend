@@ -11,6 +11,7 @@
 
 # virtual environment
 .venv
+.env
 
 # remove temp dir
 frame
