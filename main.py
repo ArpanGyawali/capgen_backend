@@ -11,6 +11,7 @@ from typing import Literal
 import aiohttp_cors
 import PIL
 import tensorflow as tf
+import settings
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
@@ -26,10 +27,11 @@ ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
-settings.init()
+# settings.init()
 
 if tf.test.gpu_device_name():
-    print("Default GPU Device: {}".format(tf.test.gpu_device_name()))
+    print('checking watchdog')
+    print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
 else:
     print("Please install GPU version of TF")
 
@@ -40,7 +42,6 @@ captionState, setCaptionState = UseState(CapStatus.NO_CAP).init()
 
 
 async def offer(request):
-    print(type(request))
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 

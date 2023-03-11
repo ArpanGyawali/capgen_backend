@@ -82,7 +82,10 @@ class VideoCaptionTrack:
             # await asyncio.sleep(3)
             # self._isNewCap = True
             # random_num = random.randint(0, 3)
-            # self._caption = captionList[random_num]
+            # sel9f._caption = captionList[random_num]
+            print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+            print(images.shape)
+            print('$&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
             thread = Thread(target=self.mythreadFunc, args=(images,))
             # self._threads.append(thread)
             thread.start()
