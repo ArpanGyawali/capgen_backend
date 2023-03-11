@@ -6,6 +6,9 @@ def extract_features(model, images):
     :param model: the pretrained vgg16 model
     :return: numpy array of size 4096x80
     """
-    fc_feats = model.predict(images, batch_size=128)
+    print('######################################')
+    print(images.shape)
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+    fc_feats = model.predict(images, batch_size=32)
     img_feats = np.array(fc_feats)
     return img_feats
