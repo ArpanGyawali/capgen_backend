@@ -1,23 +1,25 @@
 import argparse
 import asyncio
+import enum
 import json
 import logging
 import os
 import ssl
 import uuid
+from typing import Literal
 
 import aiohttp_cors
 import PIL
-import settings
+import tensorflow as tf
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
-import tensorflow as tf
 
-
+import settings
+from components import UseState
+from enums import CapStatus, DataChannelStatus, PeerConnectionStatus
+from exceptions import ConnectionClosed
 from VideoCaptionTrack import VideoCaptionTrack
-
-import tensorflow as tf
 
 ROOT = os.path.dirname(__file__)
 
@@ -27,9 +29,15 @@ relay = MediaRelay()
 settings.init()
 
 if tf.test.gpu_device_name():
-    print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
+    print("Default GPU Device: {}".format(tf.test.gpu_device_name()))
 else:
     print("Please install GPU version of TF")
+
+
+# Define the states of the application
+dataChannelState, setDataChannelState = UseState(DataChannelStatus.CLOSED).init()
+captionState, setCaptionState = UseState(CapStatus.NO_CAP).init()
+
 
 async def offer(request):
     print(type(request))
@@ -45,7 +53,13 @@ async def offer(request):
     @channel.on("open")
     def on_open():
         print("channel opened")
+        setDataChannelState(DataChannelStatus.OPEN)
         # channel.send("Hello from backend via Datachannel")
+
+    @channel.on("close")
+    def on_close():
+        print("channel closed")
+        setDataChannelState(DataChannelStatus.CLOSED)
 
     pcs.add(pc)
 
@@ -78,44 +92,73 @@ async def offer(request):
             print("track added")
 
             videoTrack = VideoCaptionTrack(track)
-            while(1):
-                await videoTrack.receive()
-                if videoTrack.isNewCap:
-                    videoTrack.isNewCap = False
+
+            while 1:
+                print(
+                    pc.connectionState == PeerConnectionStatus.CONNECTED
+                    and dataChannelState == DataChannelStatus.CLOSED
+                )
+                communicationState = [pc.connectionState, dataChannelState]
+                if (
+                    pc.connectionState == PeerConnectionStatus.CONNECTED
+                    and dataChannelState == DataChannelStatus.CLOSED
+                ):
+                    break
+
+                await videoTrack.receive(communicationState, setCaptionState)
+
+                if captionState == CapStatus.NEW_CAP:
+                    setCaptionState(CapStatus.NO_CAP)
                     channel.send(videoTrack.caption)
-                
+
+                # if videoTrack.isNewCap:
+                #     videoTrack.isNewCap = False
+                #     channel.send(videoTrack.caption)
+
+            # while 1:
+            #     await videoTrack.receive(setCaptionState)
+
+            #     if captionState == CapStatus.NEW_CAP:
+            #         setCaptionState(CapStatus.NO_CAP)
+            #         channel.send(videoTrack.caption)
+            #     if (
+            #         pc.connectionState == PeerConnectionStatus.CONNECTED
+            #         and dataChannelState == DataChannelStatus.CLOSED
+            #     ):
+            #         # break
+            #         pass
+
         print("track subscribed")
 
-            # print("processing done")
-            # channel.send("Caption 1")
+        # print("processing done")
+        # channel.send("Caption 1")
 
-            # await asyncio.sleep(5)
-            # channel.send("Caption 2")
+        # await asyncio.sleep(5)
+        # channel.send("Caption 2")
 
-            # # loop to continuously receive frames
-            # count = 0
-            # while True:
-            #     frame = await track.recv()
-            #     if frame:
-            #         # do something with the frame, e.g. send it to a video sink
-            #         # ...
+        # # loop to continuously receive frames
+        # count = 0
+        # while True:
+        #     frame = await track.recv()
+        #     if frame:
+        #         # do something with the frame, e.g. send it to a video sink
+        #         # ...
 
-            #         PIL.Image.fromarray(frame.to_ndarray(format="rgb24")).save(
-            #             f"frame/frame{count}.jpg"
-            #         )
+        #         PIL.Image.fromarray(frame.to_ndarray(format="rgb24")).save(
+        #             f"frame/frame{count}.jpg"
+        #         )
 
-            #         img = frame.to_ndarray(format="rgb24")
-            #         print(img)
-            #         count += 1
+        #         img = frame.to_ndarray(format="rgb24")
+        #         print(img)
+        #         count += 1
 
-            #     else:
-            #         break
+        #     else:
+        #         break
 
-            # frame = await relay.subscribe(track).recv()
-            # frame = await track.recv()
+        # frame = await relay.subscribe(track).recv()
+        # frame = await track.recv()
 
-            # pc.addTrack(VideoCaptionTrack(relay.subscribe(track)))
-            
+        # pc.addTrack(VideoCaptionTrack(relay.subscribe(track)))
 
         @track.on("ended")
         async def on_ended():

@@ -13,6 +13,10 @@
 .venv
 .env
 
+
+# test files
+test.py
+
 # remove temp dir
 frame
 # IntelliJ related
