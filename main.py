@@ -7,7 +7,6 @@ import ssl
 import uuid
 
 import aiohttp_cors
-import PIL
 import settings
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
@@ -24,15 +23,15 @@ ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
-settings.init()
+# settings.init()
 
 if tf.test.gpu_device_name():
+    print('checking watchdog')
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
 else:
     print("Please install GPU version of TF")
 
 async def offer(request):
-    print(type(request))
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 

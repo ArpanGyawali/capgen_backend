@@ -40,6 +40,7 @@ kiwisolver==1.4.4
 libclang==15.0.6.1
 Markdown==3.4.1
 MarkupSafe==2.1.2
+matplotlib==3.7.1
 mccabe==0.7.0
 multidict==6.0.4
 mypy-extensions==1.0.0
@@ -49,6 +50,7 @@ oauthlib==3.2.2
 opencv-python==4.7.0.68
 opt-einsum==3.3.0
 packaging==23.0
+pandas==1.5.3
 pathspec==0.11.0
 Pillow==9.4.0
 platformdirs==3.1.0
