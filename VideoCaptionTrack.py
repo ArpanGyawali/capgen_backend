@@ -101,8 +101,7 @@ class VideoCaptionTrack:
             # thread = Thread(target=self.fn, args=())
             thread.start()
 
-    def startMultiProcessing(self, setCaptionState):
-        return
+    def startMultiProcessing(self):
         self._process = multiprocessing.Process(
             target=VideoCaptionTrack.multiProcessingFunction,
             args=(
@@ -119,7 +118,7 @@ class VideoCaptionTrack:
         self._process.terminate()
         print("PROCESSES TERMINATED")
 
-    async def receive(self, communicationState, setCaptionState):
+    async def receive(self, setCaptionState):
         if captionQueue.qsize() > 0:
             print("CAPTION CHANGED")
             self._caption = captionQueue.get()

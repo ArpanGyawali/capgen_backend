@@ -92,7 +92,7 @@ async def offer(request):
             print("track added")
 
             videoTrack = VideoCaptionTrack(track)
-            videoTrack.startMultiProcessing(setCaptionState)
+            videoTrack.startMultiProcessing()
 
             while 1:
                 # print(
@@ -107,7 +107,7 @@ async def offer(request):
                     videoTrack.killMultiProcesses()
                     break
 
-                await videoTrack.receive(communicationState, setCaptionState)
+                await videoTrack.receive(setCaptionState)
                 
                 # print(captionState)
 
