@@ -161,7 +161,6 @@ class VideoCaptionTrack:
             # sel9f._caption = captionList[random_num]
 
             # thread = Thread(target=self.mythreadFunc, args=(images,))
-            
 
             # store images in the queue
             # Qimages.put(images)
