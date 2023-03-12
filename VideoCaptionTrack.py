@@ -1,8 +1,9 @@
 import asyncio
-import random
-from threading import Thread
 import multiprocessing
-
+import random
+import threading
+from queue import Queue
+from threading import Thread
 
 import cv2
 import numpy as np
@@ -28,19 +29,24 @@ class VideoCaptionTrack:
     A video stream track that transforms frames from an another track of frames with captions.
     """
 
-    def __init__(self, track):
-        self._track = track
-        self._count = 0
-        self._frames = []
+    def __init__(self, track: MediaStreamTrack):
+        self._track: MediaStreamTrack = track
+        self._count: int = 0
+        self._frames: list = []
+        self._process: multiprocessing.Process = None
 
-        self._caption = ""
-        # self._threads= []
+        self._caption: str = ""
+        self._images: Queue = Queue(maxsize=10)
 
     def mythreadFunc(self, images, setCaptionState):
         caption = predict.test(images)
         # self._isNewCap = True
         setCaptionState(CapStatus.NEW_CAP)
         self._caption = caption
+        
+    def test_function(self):
+        for i in range(100):
+            print(i)
 
     @property
     def isNewCap(self):
@@ -54,12 +60,30 @@ class VideoCaptionTrack:
     def isNewCap(self, value):
         self._isNewCap = value
 
-    async def receive(self, connectionState, setCaptionState):
+    def multiProcessingFunction(self, setCaptionState):
+        while 1:
+            # if it is empty block until next item is available
+            print("WAITING FOR IMAGES")
+            images = self._images.get()
+            print("GOT IMAGES FROM QUEUE")
+            # thread = Thread(target=self.mythreadFunc, args=(images, setCaptionState))
+            thread = Thread(target=self.test_function, args=())
+            thread.start()
+
+    def startMultiProcessing(self, setCaptionState):
+        self._process = multiprocessing.Process(
+            target=self.multiProcessingFunction, args=(setCaptionState,)
+        )
+        self._process.start()
+
+    async def receive(self,communicationState, setCaptionState):
         try:
             frame = await self._track.recv()
         except MediaStreamError as e:
             print("exception thrown")
-
+            
+            print("TERMINATING THE PROCCESS(ALL THREADS)")
+            self._process.terminate()
             # TODO:  Kill all the incomplete running threads
 
             print(e)
@@ -83,10 +107,9 @@ class VideoCaptionTrack:
             # self._isNewCap = True
             # random_num = random.randint(0, 3)
             # sel9f._caption = captionList[random_num]
-            print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-            print(images.shape)
-            print('$&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-            thread = Thread(target=self.mythreadFunc, args=(images,))
-            # self._threads.append(thread)
-            thread.start()
+
+            # thread = Thread(target=self.mythreadFunc, args=(images,))
+            # store images in the queue
+            self._images.put(images)
+            # thread.start()
         print(self._count)
