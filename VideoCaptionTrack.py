@@ -1,11 +1,15 @@
 import asyncio
+import datetime
 import multiprocessing
+import pickle
+import queue
 import random
 import threading
 from queue import Queue
 from threading import Thread
 
 import cv2
+import dill
 import numpy as np
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
@@ -24,6 +28,17 @@ captionList = [
 ]
 
 
+def print_square(*args):
+    """
+    function to print square of given num
+    """
+    print(f"Square: {100 * 100}")
+
+
+qimages: multiprocessing.Queue = multiprocessing.Queue(maxsize=5)
+captionQueue: multiprocessing.Queue = multiprocessing.Queue(maxsize=10)
+
+
 class VideoCaptionTrack:
     """
     A video stream track that transforms frames from an another track of frames with captions.
@@ -36,15 +51,11 @@ class VideoCaptionTrack:
         self._process: multiprocessing.Process = None
 
         self._caption: str = ""
-        self._images: Queue = Queue(maxsize=10)
 
-    def mythreadFunc(self, images, setCaptionState):
-        caption = predict.test(images)
-        # self._isNewCap = True
-        setCaptionState(CapStatus.NEW_CAP)
-        self._caption = caption
-        
-    def test_function(self):
+        # self._setCaptionState = multiprocessing.Value("i", 0)
+
+    @staticmethod
+    def test_function():
         for i in range(100):
             print(i)
 
@@ -60,45 +71,86 @@ class VideoCaptionTrack:
     def isNewCap(self, value):
         self._isNewCap = value
 
-    def multiProcessingFunction(self, setCaptionState):
+    @staticmethod
+    def mythreadFunc(images, captionQueue: multiprocessing.Queue):
+        print("PROCESSING IMAGES")
+
         while 1:
-            # if it is empty block until next item is available
+            print("inside thread")
+        # caption = predict.test(images)
+        # a = caption
+        captionQueue.put("new caption")
+
+        # self._isNewCap = True
+        # setCaptionState(CapStatus.NEW_CAP)
+        print("CAPTION SET")
+        # self._caption = caption
+
+    @staticmethod
+    def multiProcessingFunction(
+        qimages: multiprocessing.Queue, captionQueue: multiprocessing.Queue
+    ):
+        while 1:
+            # if it is empty block until next istem is available
             print("WAITING FOR IMAGES")
-            images = self._images.get()
+            images = qimages.get()
             print("GOT IMAGES FROM QUEUE")
-            # thread = Thread(target=self.mythreadFunc, args=(images, setCaptionState))
-            thread = Thread(target=self.test_function, args=())
+            thread = Thread(
+                target=VideoCaptionTrack.mythreadFunc, args=(images, captionQueue)
+            )
+            # thread = Thread(target=self.fn, args=())
             thread.start()
 
     def startMultiProcessing(self, setCaptionState):
+        return
         self._process = multiprocessing.Process(
-            target=self.multiProcessingFunction, args=(setCaptionState,)
+            target=VideoCaptionTrack.multiProcessingFunction,
+            args=(
+                qimages,
+                captionQueue,
+            ),
         )
+        print("PROCESS STARTING")
         self._process.start()
+        print("PROCESS STARTED")
 
-    async def receive(self,communicationState, setCaptionState):
+    def killMultiProcesses(self):
+        print("TERMINTING THE PROCESSES")
+        self._process.terminate()
+        print("PROCESSES TERMINATED")
+
+    async def receive(self, communicationState, setCaptionState):
+        if captionQueue.qsize() > 0:
+            print("CAPTION CHANGED")
+            self._caption = captionQueue.get()
+            # self._isNewCap = True
+            setCaptionState(CapStatus.NEW_CAP)
+            print("CAPTION SET")
+            # self._caption = caption
+
         try:
             frame = await self._track.recv()
         except MediaStreamError as e:
-            print("exception thrown")
-            
-            print("TERMINATING THE PROCCESS(ALL THREADS)")
-            self._process.terminate()
+            # print("exception thrown")
             # TODO:  Kill all the incomplete running threads
+
+            # print("TERMINATING THE PROCCESS(ALL THREADS)")
+            # self.killMultiProcesses()
 
             print(e)
             return
         self._count += 1
         # print('**********' + str(self.count) + '*********')
         # frame.to_image().save("frame.jpg")
-        img = frame.to_ndarray(format="rgb24")
+        img: np.ndarray = frame.to_ndarray(format="rgb24")
         # print(img)
         # cv2.imshow("frame", img)
 
         if self._count <= 80:
-            image = cv2.resize(img, (224, 224))
+            print(img.shape)
+            # image = cv2.resize(img, (224, 224))
             # frame = cv2.resize(frame, (224, 224, 3))
-            self._frames.append(image)
+            self._frames.append(img)
         elif self._count == 81:
             self._count = 0
             images = np.array(self._frames)
@@ -109,7 +161,11 @@ class VideoCaptionTrack:
             # sel9f._caption = captionList[random_num]
 
             # thread = Thread(target=self.mythreadFunc, args=(images,))
+            
+
             # store images in the queue
-            self._images.put(images)
+            # Qimages.put(images)
+            qimages.put(images)
+            print(qimages.qsize())
             # thread.start()
-        print(self._count)
+        print("COUNT", self._count)

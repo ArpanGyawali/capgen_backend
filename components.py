@@ -30,6 +30,7 @@ class UseState:
 
     def setStatus(self, value):
         self._status = value
+        print(self._status)
 
     def __repr__(self):
         return self._status

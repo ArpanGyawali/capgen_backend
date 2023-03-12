@@ -11,12 +11,11 @@ from typing import Literal
 import aiohttp_cors
 import PIL
 import tensorflow as tf
-import settings
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
 
-import settings
+
 from components import UseState
 from enums import CapStatus, DataChannelStatus, PeerConnectionStatus
 from exceptions import ConnectionClosed
@@ -30,8 +29,8 @@ relay = MediaRelay()
 # settings.init()
 
 if tf.test.gpu_device_name():
-    print('checking watchdog')
-    print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
+    print("checking watchdog")
+    print("Default GPU Device: {}".format(tf.test.gpu_device_name()))
 else:
     print("Please install GPU version of TF")
 
@@ -93,20 +92,24 @@ async def offer(request):
             print("track added")
 
             videoTrack = VideoCaptionTrack(track)
+            videoTrack.startMultiProcessing(setCaptionState)
 
             while 1:
-                print(
-                    pc.connectionState == PeerConnectionStatus.CONNECTED
-                    and dataChannelState == DataChannelStatus.CLOSED
-                )
+                # print(
+                #     pc.connectionState == PeerConnectionStatus.CONNECTED
+                #     and dataChannelState == DataChannelStatus.CLOSED
+                # )
                 communicationState = [pc.connectionState, dataChannelState]
                 if (
                     pc.connectionState == PeerConnectionStatus.CONNECTED
                     and dataChannelState == DataChannelStatus.CLOSED
                 ):
+                    videoTrack.killMultiProcesses()
                     break
 
                 await videoTrack.receive(communicationState, setCaptionState)
+                
+                # print(captionState)
 
                 if captionState == CapStatus.NEW_CAP:
                     setCaptionState(CapStatus.NO_CAP)
