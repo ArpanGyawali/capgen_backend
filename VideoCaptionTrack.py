@@ -7,6 +7,7 @@ import random
 import threading
 from queue import Queue
 from threading import Thread
+import settings
 
 import cv2
 import dill
@@ -75,11 +76,11 @@ class VideoCaptionTrack:
     def mythreadFunc(images, captionQueue: multiprocessing.Queue):
         print("PROCESSING IMAGES")
 
-        while 1:
-            print("inside thread")
-        # caption = predict.test(images)
+        # while 1:
+        #     print("inside thread")
+        caption = predict.test(images)
         # a = caption
-        captionQueue.put("new caption")
+        captionQueue.put(caption)
 
         # self._isNewCap = True
         # setCaptionState(CapStatus.NEW_CAP)
@@ -92,9 +93,9 @@ class VideoCaptionTrack:
     ):
         while 1:
             # if it is empty block until next istem is available
-            print("WAITING FOR IMAGES")
+            # print("WAITING FOR IMAGES")
             images = qimages.get()
-            print("GOT IMAGES FROM QUEUE")
+            # print("GOT IMAGES FROM QUEUE")
             thread = Thread(
                 target=VideoCaptionTrack.mythreadFunc, args=(images, captionQueue)
             )
@@ -146,7 +147,6 @@ class VideoCaptionTrack:
         # cv2.imshow("frame", img)
 
         if self._count <= 80:
-            print(img.shape)
             # image = cv2.resize(img, (224, 224))
             # frame = cv2.resize(frame, (224, 224, 3))
             self._frames.append(img)
@@ -166,4 +166,4 @@ class VideoCaptionTrack:
             qimages.put(images)
             print(qimages.qsize())
             # thread.start()
-        print("COUNT", self._count)
+        # print("COUNT", self._count)

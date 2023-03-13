@@ -14,6 +14,7 @@ import tensorflow as tf
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
+import settings
 
 
 from components import UseState
@@ -26,7 +27,7 @@ ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
-# settings.init()
+settings.init()
 
 if tf.test.gpu_device_name():
     print("checking watchdog")
