@@ -50,7 +50,7 @@ def sample_frame_indices(clip_len, frame_sample_rate, seg_len):
 # file_path = hf_hub_download(
 #     repo_id="nielsr/video-demo", filename="eating_spaghetti.mp4", repo_type="dataset"
 # )
-file_path = "video2.mp4"
+file_path = "check/video3.mp4"
 container = av.open(file_path)
 
 # sample frames

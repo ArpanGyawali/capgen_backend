@@ -7,7 +7,6 @@ import random
 import threading
 from queue import Queue
 from threading import Thread
-import settings
 
 import cv2
 import numpy as np
@@ -133,6 +132,8 @@ class VideoCaptionTrack:
             # print(img.shape)
             # image = cv2.resize(img, (224, 224))
             # frame = cv2.resize(frame, (224, 224, 3))
+            # waits for 0.8 seconds
+            await asyncio.sleep(0.4)
             self._frames.append(img)
         elif self._count == 7:
             self._count = 0

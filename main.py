@@ -13,8 +13,6 @@ import PIL
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
-import settings
-
 from components import UseState
 from enums import CapStatus, DataChannelStatus, PeerConnectionStatus
 from exceptions import ConnectionClosed
@@ -25,7 +23,7 @@ ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
-settings.init()
+
 
 
 # Define the states of the application
@@ -102,8 +100,7 @@ async def offer(request):
 
                 await videoTrack.receive(setCaptionState)
                 
-                # waits for 0.8 seconds
-                await asyncio.sleep(0.4)
+                
 
                 # print(captionState)
 
