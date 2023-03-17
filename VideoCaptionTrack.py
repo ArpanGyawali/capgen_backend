@@ -7,6 +7,7 @@ import random
 import threading
 from queue import Queue
 from threading import Thread
+import settings
 
 import cv2
 import numpy as np
@@ -76,16 +77,8 @@ class VideoCaptionTrack:
 
     @staticmethod
     def mythreadFunc(images, captionQueue: multiprocessing.Queue):
-        print("PROCESSING IMAGES")
+        pass
 
-        while 1:
-            print("inside thread")
-
-        captionQueue.put("new caption")
-
-
-        print("CAPTION SET")
-        # self._caption = caption
 
     @staticmethod
     def multiProcessingFunction(
@@ -93,9 +86,9 @@ class VideoCaptionTrack:
     ):
         while 1:
             # if it is empty block until next istem is available
-            print("WAITING FOR IMAGES")
+            # print("WAITING FOR IMAGES")
             images = qimages.get()
-            print("GOT IMAGES FROM QUEUE")
+            # print("GOT IMAGES FROM QUEUE")
             thread = Thread(
                 target=VideoCaptionTrack.mythreadFunc, args=(images, captionQueue)
             )

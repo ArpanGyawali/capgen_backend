@@ -13,6 +13,7 @@ import PIL
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
+import settings
 
 from components import UseState
 from enums import CapStatus, DataChannelStatus, PeerConnectionStatus
@@ -24,7 +25,7 @@ ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
-# settings.init()
+settings.init()
 
 
 # Define the states of the application
