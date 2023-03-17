@@ -10,11 +10,9 @@ from typing import Literal
 
 import aiohttp_cors
 import PIL
-import tensorflow as tf
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRelay
-
 
 from components import UseState
 from enums import CapStatus, DataChannelStatus, PeerConnectionStatus
@@ -27,12 +25,6 @@ logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
 # settings.init()
-
-if tf.test.gpu_device_name():
-    print("checking watchdog")
-    print("Default GPU Device: {}".format(tf.test.gpu_device_name()))
-else:
-    print("Please install GPU version of TF")
 
 
 # Define the states of the application
@@ -92,7 +84,7 @@ async def offer(request):
             print("track added")
 
             videoTrack = VideoCaptionTrack(track)
-            videoTrack.startMultiProcessing()
+            
 
             while 1:
                 # print(
@@ -104,65 +96,24 @@ async def offer(request):
                     pc.connectionState == PeerConnectionStatus.CONNECTED
                     and dataChannelState == DataChannelStatus.CLOSED
                 ):
-                    videoTrack.killMultiProcesses()
+                    
                     break
 
                 await videoTrack.receive(setCaptionState)
                 
+                # waits for 0.8 seconds
+                await asyncio.sleep(0.4)
+
                 # print(captionState)
 
                 if captionState == CapStatus.NEW_CAP:
                     setCaptionState(CapStatus.NO_CAP)
                     channel.send(videoTrack.caption)
 
-                # if videoTrack.isNewCap:
-                #     videoTrack.isNewCap = False
-                #     channel.send(videoTrack.caption)
-
-            # while 1:
-            #     await videoTrack.receive(setCaptionState)
-
-            #     if captionState == CapStatus.NEW_CAP:
-            #         setCaptionState(CapStatus.NO_CAP)
-            #         channel.send(videoTrack.caption)
-            #     if (
-            #         pc.connectionState == PeerConnectionStatus.CONNECTED
-            #         and dataChannelState == DataChannelStatus.CLOSED
-            #     ):
-            #         # break
-            #         pass
+ 
 
         print("track subscribed")
 
-        # print("processing done")
-        # channel.send("Caption 1")
-
-        # await asyncio.sleep(5)
-        # channel.send("Caption 2")
-
-        # # loop to continuously receive frames
-        # count = 0
-        # while True:
-        #     frame = await track.recv()
-        #     if frame:
-        #         # do something with the frame, e.g. send it to a video sink
-        #         # ...
-
-        #         PIL.Image.fromarray(frame.to_ndarray(format="rgb24")).save(
-        #             f"frame/frame{count}.jpg"
-        #         )
-
-        #         img = frame.to_ndarray(format="rgb24")
-        #         print(img)
-        #         count += 1
-
-        #     else:
-        #         break
-
-        # frame = await relay.subscribe(track).recv()
-        # frame = await track.recv()
-
-        # pc.addTrack(VideoCaptionTrack(relay.subscribe(track)))
 
         @track.on("ended")
         async def on_ended():

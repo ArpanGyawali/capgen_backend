@@ -9,16 +9,19 @@ from queue import Queue
 from threading import Thread
 
 import cv2
-import dill
 import numpy as np
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
 from av import VideoFrame
 
-import predict
+
 from components import UseState
 from enums import CapStatus, DataChannelStatus, PeerConnectionStatus
 from exceptions import ConnectionClosed
+import initialization
+import time
+import torch
+
 
 captionList = [
     "sdasd",
@@ -38,7 +41,7 @@ def print_square(*args):
 qimages: multiprocessing.Queue = multiprocessing.Queue(maxsize=5)
 captionQueue: multiprocessing.Queue = multiprocessing.Queue(maxsize=10)
 
-
+initialization.init()
 class VideoCaptionTrack:
     """
     A video stream track that transforms frames from an another track of frames with captions.
@@ -77,12 +80,10 @@ class VideoCaptionTrack:
 
         while 1:
             print("inside thread")
-        # caption = predict.test(images)
-        # a = caption
+
         captionQueue.put("new caption")
 
-        # self._isNewCap = True
-        # setCaptionState(CapStatus.NEW_CAP)
+
         print("CAPTION SET")
         # self._caption = caption
 
@@ -98,7 +99,7 @@ class VideoCaptionTrack:
             thread = Thread(
                 target=VideoCaptionTrack.mythreadFunc, args=(images, captionQueue)
             )
-            # thread = Thread(target=self.fn, args=())
+            
             thread.start()
 
     def startMultiProcessing(self):
@@ -119,23 +120,13 @@ class VideoCaptionTrack:
         print("PROCESSES TERMINATED")
 
     async def receive(self, setCaptionState):
-        if captionQueue.qsize() > 0:
-            print("CAPTION CHANGED")
-            self._caption = captionQueue.get()
-            # self._isNewCap = True
-            setCaptionState(CapStatus.NEW_CAP)
-            print("CAPTION SET")
-            # self._caption = caption
+
 
         try:
             frame = await self._track.recv()
         except MediaStreamError as e:
             # print("exception thrown")
-            # TODO:  Kill all the incomplete running threads
-
-            # print("TERMINATING THE PROCCESS(ALL THREADS)")
-            # self.killMultiProcesses()
-
+            # TODO:  Handle the media exception
             print(e)
             return
         self._count += 1
@@ -145,25 +136,24 @@ class VideoCaptionTrack:
         # print(img)
         # cv2.imshow("frame", img)
 
-        if self._count <= 80:
-            print(img.shape)
+        if self._count <= 6:
+            # print(img.shape)
             # image = cv2.resize(img, (224, 224))
             # frame = cv2.resize(frame, (224, 224, 3))
             self._frames.append(img)
-        elif self._count == 81:
+        elif self._count == 7:
             self._count = 0
-            images = np.array(self._frames)
+            frames = np.stack(frame for frame in self._frames)
             self._frames = []
-            # await asyncio.sleep(3)
-            # self._isNewCap = True
-            # random_num = random.randint(0, 3)
-            # sel9f._caption = captionList[random_num]
 
-            # thread = Thread(target=self.mythreadFunc, args=(images,))
+            start = time.time()
+            pixel_values = initialization.processor(images=list(frames), return_tensors="pt").pixel_values
 
-            # store images in the queue
-            # Qimages.put(images)
-            qimages.put(images)
-            print(qimages.qsize())
-            # thread.start()
+
+            # frames = torch.tensor(frames).to(device)
+            pixel_values = pixel_values.to(initialization.device)
+            # start prediction
+            generated_ids = initialization.model.generate(pixel_values=pixel_values, max_length=20)
+            caption =initialization.processor.batch_decode(generated_ids, skip_special_tokens=True),
+            print(caption)
         print("COUNT", self._count)
