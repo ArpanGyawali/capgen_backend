@@ -8,3 +8,7 @@ max_probability = -1
 save_model_path = os.path.join('model_final')
 max_length = 10
 
+
+class HyperParameters:
+    NO_OF_SECONDS = 3
+    

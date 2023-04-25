@@ -20,6 +20,7 @@ def init():
     global model
 
     if not os.path.exists("ml-models/git-base-vatex"):
+        print("Model downloading from huggingface")
         # ? Use this code to download the processor and model if you don't have it locally
         processor = AutoProcessor.from_pretrained("microsoft/git-base-vatex")
         model = AutoModelForCausalLM.from_pretrained("microsoft/git-base-vatex")
