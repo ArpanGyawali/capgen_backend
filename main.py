@@ -100,9 +100,7 @@ async def offer(request):
 
                 await videoTrack.receive(setCaptionState)
                 
-                
 
-                # print(captionState)
 
                 if captionState == CapStatus.NEW_CAP:
                     setCaptionState(CapStatus.NO_CAP)

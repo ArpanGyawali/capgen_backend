@@ -224,7 +224,7 @@ class VideoCaptionTrack:
             # self._caption = caption[0][0]
             # print("CAPTION: ",self._caption)
             # setCaptionState(CapStatus.NEW_CAP)
-
+            print("new thread started")
             thread = Thread(
                 target=self._predict_caption, args=(pixel_values, setCaptionState)
             )
