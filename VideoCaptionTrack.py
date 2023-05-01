@@ -42,7 +42,7 @@ def print_square(*args):
 qimages: multiprocessing.Queue = multiprocessing.Queue(maxsize=5)
 captionQueue: multiprocessing.Queue = multiprocessing.Queue(maxsize=10)
 
-initialization.init()
+
 
 
 class VideoCaptionTrack:

@@ -18,6 +18,9 @@ from enums import CapStatus, DataChannelStatus, PeerConnectionStatus
 from exceptions import ConnectionClosed
 from VideoCaptionTrack import VideoCaptionTrack
 
+import initialization
+
+initialization.init()
 ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
@@ -138,11 +141,35 @@ async def on_shutdown(app):
     await asyncio.gather(*coros)
     pcs.clear()
 
+async def change_model(request):
+
+    changed_model = "NO CHANGE"
+
+    params = await request.json()
+    if params["model"] == "pulchowk" and initialization.pulchowk_model:
+        #  set the mdoel to pulchowk model
+       initialization.model = initialization.pulchowk_model 
+       changed_model = "pulchowk"
+    elif params["model"] == "git" and initialization.git_model:
+        # set the model to the git model 
+        initialization.model = initialization.git_model
+        changed_model = "git"
+        pass
+    print(changed_model)
+    
+    return web.Response(
+        content_type="application/json",
+        text=json.dumps(
+            {"changed_model" :changed_model }
+        ),
+    )
+
 
 app = web.Application()
 cors = aiohttp_cors.setup(app)
 app.on_shutdown.append(on_shutdown)
 app.router.add_post("/offer", offer)
+app.router.add_post("/change_model", change_model)
 
 for route in list(app.router.routes()):
     cors.add(

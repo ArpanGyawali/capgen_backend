@@ -10,5 +10,5 @@ max_length = 10
 
 
 class HyperParameters:
-    NO_OF_SECONDS = 3
+    NO_OF_SECONDS = 5
     
